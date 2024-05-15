@@ -1,25 +1,17 @@
 const jwt = require("jsonwebtoken");
 
-const verifyToken = (req, res, next) => {
-  const authHeader = req.headers.authorization;
+async function verifyToken(req, res, next) {
 
-  if (!authHeader) {
-    return res.status(401).json({
-      message: "No token provided. Unauthorized",
-    });
-  }
-
-  const token = authHeader.split(" ")[1];
-
-  jwt.verify(token, "bazmaSecretKey", (err, user) => {
+  const token = req.headers.authorization;
+  jwt.verify(token, 'bazmaSecretKey', function(err, decoded) {
     if (err) {
-      return res.status(403).json({
-        message: "Invalid token. Forbidden",
-      });
+      return res.status(481).json({
+        message: "Invalid Token, Unauthorized"
+      })
     }
-    req.user = user;
-    next();
-  });
+    req.user = decoded;
+    return next();
+  })
 };
-
+  
 module.exports = verifyToken;

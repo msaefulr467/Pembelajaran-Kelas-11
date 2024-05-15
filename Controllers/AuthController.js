@@ -1,4 +1,4 @@
-const { registerUser, loginUser, getMe } = require("../Models/AuthModel");
+const { registerUser, loginUser, getMe, logoutUser } = require("../Models/AuthModel");
 const { body, validationResult } = require("express-validator");
 
 async function register(req, res) {
@@ -8,23 +8,19 @@ async function register(req, res) {
     body("password").notEmpty().withMessage("Password is required"),
     body("phone").notEmpty().withMessage("Phone is required"),
   ];
-
   await Promise.all(validation.map((v) => v.run(req)));
   const errors = validationResult(req);
-
   if (!errors.isEmpty()) {
     const errMsg = errors.array().map((error) => ({ [error.path]: error.msg }));
     return res.status(422).json({ errors: errMsg });
   }
-
   const { name, email, password } = req.body;
-
   try {
     const result = await registerUser(name, email, password);
     if (result.success) {
       res.status(201).json({ success: true, message: result.message });
     } else {
-      res.status(500).json({ error: result.message });
+      res.status(500).json({ error: "Internal server error!" });
     }
   } catch (error) {
     console.error(error);
@@ -78,4 +74,28 @@ async function me(req, res) {
   }
 }
 
-module.exports = { register, login, me };
+
+// Logout
+async function logout(req, res) {
+  try {
+    const token = req.headers.authorization;
+    const result = await logoutUser(token);
+    if (!result) {
+      return res.status(404).json({ error: true, message: 'User not found' });
+    }
+
+    if (result.success) {
+      res.status(201).json({
+        success: result.success,
+        message: result.message,
+      })
+    } else {
+      res.status(500).json({ error: result.message })
+    }
+  }
+  catch (error) {
+    console.error(error);
+  }
+}
+
+module.exports = { register, login, me, logout };
